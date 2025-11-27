@@ -5,6 +5,7 @@ It is current designed to worked with the Clojure programming
 language, but can be used with any file.
 
 
+
 ** Command line tools
 
 *** TODO planner plan
@@ -28,5 +29,74 @@ language, but can be used with any file.
 
 ** Data model
 
-- plan
-- task
+*** plan-skill
+
+A small piece of knowledge that planning tool has learned.
+
+**** name
+**** description
+**** content
+
+*** plan-state
+
+**** plan-state/created
+**** plan-state/researched
+**** plan-state/file-change-created
+**** plan-state/file-changes-reviewed
+**** plan-state/file-changes-applied
+**** plan-state/results-reviewed
+**** plan-state/completed
+
+*** plan
+
+A plan has a workflow and can be moved between the workflows.
+
+Plans have a name, context and tasks.
+
+**** name
+**** context
+**** tasks
+**** skills
+**** file-changes
+**** file-applications
+
+
+*** task
+
+Tasks have a name and context. They are completable.
+
+**** parent-id
+**** context
+**** completed
+
+*** file-change
+
+A file-change is when the LLM wants to make a modification to a code
+file. This is designed to
+
+**** changes
+***** addition
+****** line-start
+****** line-end
+****** change
+
+***** removal
+****** line-start
+****** line-end
+
+***** update
+****** line-start
+****** line-end
+****** change
+
+*** file-change-application
+
+Results of the times we have applied a set of file changes.
+
+*** error
+**** message
+**** stack-trace
+
+*** file
+**** path
+**** summary

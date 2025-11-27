@@ -1,3 +1,313 @@
 {:id   "001-initial-schema"
- :up   ["PRAGMA foreign_keys = ON"]
- :down []}
+ :up   [
+        ;; Enable foreign keys
+        "PRAGMA foreign_keys = ON"
+
+        ;; =====================================================
+        ;; Reference Tables
+        ;; =====================================================
+
+        "CREATE TABLE IF NOT EXISTS plan_state (
+          id TEXT PRIMARY KEY
+        )"
+
+        ;; Pre-populate plan states
+        "INSERT INTO plan_state (id) VALUES
+          ('created'),
+          ('researched'),
+          ('file-change-created'),
+          ('file-changes-reviewed'),
+          ('file-changes-applied'),
+          ('results-reviewed'),
+          ('completed')"
+
+        ;; =====================================================
+        ;; Core Tables
+        ;; =====================================================
+
+        "CREATE TABLE IF NOT EXISTS project (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          path TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS plan_skill (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          content TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS plan (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          project_id INTEGER REFERENCES project(id),
+          name TEXT NOT NULL,
+          context TEXT NOT NULL,
+          plan_state_id TEXT NOT NULL REFERENCES plan_state(id) DEFAULT 'created',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS task (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          plan_id INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+          parent_id INTEGER REFERENCES task(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          context TEXT NOT NULL,
+          completed BOOLEAN NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS file (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          project_id INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+          path TEXT NOT NULL,
+          summary TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE(project_id, path)
+        )"
+
+        "CREATE TABLE IF NOT EXISTS file_change (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          plan_id INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+          file_id INTEGER NOT NULL REFERENCES file(id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS file_change_change (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          file_change_id INTEGER NOT NULL REFERENCES file_change(id) ON DELETE CASCADE,
+          change_type TEXT NOT NULL CHECK(change_type IN ('addition', 'removal', 'update')),
+          line_start INTEGER NOT NULL,
+          line_end INTEGER NOT NULL,
+          change_content TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS file_change_application (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          file_change_id INTEGER NOT NULL REFERENCES file_change(id) ON DELETE CASCADE,
+          plan_id INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+          status TEXT NOT NULL CHECK(status IN ('pending', 'applied', 'failed')) DEFAULT 'pending',
+          result_message TEXT,
+          applied_at TEXT NOT NULL DEFAULT (datetime('now')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS error (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          plan_id INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+          message TEXT NOT NULL,
+          stack_trace TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS plan_skills (
+          plan_id INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+          plan_skill_id INTEGER NOT NULL REFERENCES plan_skill(id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (plan_id, plan_skill_id)
+        )"
+
+        ;; =====================================================
+        ;; Indexes for Performance
+        ;; =====================================================
+
+        "CREATE INDEX IF NOT EXISTS idx_plan_project_id ON plan(project_id)"
+        "CREATE INDEX IF NOT EXISTS idx_plan_state_id ON plan(plan_state_id)"
+        "CREATE INDEX IF NOT EXISTS idx_task_plan_id ON task(plan_id)"
+        "CREATE INDEX IF NOT EXISTS idx_task_parent_id ON task(parent_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_project_id ON file(project_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_plan_id ON file_change(plan_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_file_id ON file_change(file_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_change_file_change_id ON file_change_change(file_change_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_application_file_change_id ON file_change_application(file_change_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_application_plan_id ON file_change_application(plan_id)"
+        "CREATE INDEX IF NOT EXISTS idx_error_plan_id ON error(plan_id)"
+        "CREATE INDEX IF NOT EXISTS idx_plan_skills_plan_id ON plan_skills(plan_id)"
+        "CREATE INDEX IF NOT EXISTS idx_plan_skills_plan_skill_id ON plan_skills(plan_skill_id)"
+
+        ;; =====================================================
+        ;; Full-Text Search (FTS5) Tables
+        ;; =====================================================
+
+        "CREATE VIRTUAL TABLE IF NOT EXISTS plan_fts USING fts5(
+          context,
+          content=plan,
+          content_rowid=id
+        )"
+
+        "CREATE VIRTUAL TABLE IF NOT EXISTS task_fts USING fts5(
+          context,
+          content=task,
+          content_rowid=id
+        )"
+
+        "CREATE VIRTUAL TABLE IF NOT EXISTS plan_skill_fts USING fts5(
+          content,
+          content=plan_skill,
+          content_rowid=id
+        )"
+
+        "CREATE VIRTUAL TABLE IF NOT EXISTS error_fts USING fts5(
+          message,
+          content=error,
+          content_rowid=id
+        )"
+
+        ;; =====================================================
+        ;; FTS Triggers - Keep FTS tables in sync
+        ;; =====================================================
+
+        ;; Plan FTS triggers
+        "CREATE TRIGGER IF NOT EXISTS plan_fts_insert AFTER INSERT ON plan BEGIN
+          INSERT INTO plan_fts(rowid, context) VALUES (new.id, new.context);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS plan_fts_delete AFTER DELETE ON plan BEGIN
+          INSERT INTO plan_fts(plan_fts, rowid, context) VALUES ('delete', old.id, old.context);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS plan_fts_update AFTER UPDATE ON plan BEGIN
+          INSERT INTO plan_fts(plan_fts, rowid, context) VALUES ('delete', old.id, old.context);
+          INSERT INTO plan_fts(rowid, context) VALUES (new.id, new.context);
+        END"
+
+        ;; Task FTS triggers
+        "CREATE TRIGGER IF NOT EXISTS task_fts_insert AFTER INSERT ON task BEGIN
+          INSERT INTO task_fts(rowid, context) VALUES (new.id, new.context);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS task_fts_delete AFTER DELETE ON task BEGIN
+          INSERT INTO task_fts(task_fts, rowid, context) VALUES ('delete', old.id, old.context);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS task_fts_update AFTER UPDATE ON task BEGIN
+          INSERT INTO task_fts(task_fts, rowid, context) VALUES ('delete', old.id, old.context);
+          INSERT INTO task_fts(rowid, context) VALUES (new.id, new.context);
+        END"
+
+        ;; Plan Skill FTS triggers
+        "CREATE TRIGGER IF NOT EXISTS plan_skill_fts_insert AFTER INSERT ON plan_skill BEGIN
+          INSERT INTO plan_skill_fts(rowid, content) VALUES (new.id, new.content);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS plan_skill_fts_delete AFTER DELETE ON plan_skill BEGIN
+          INSERT INTO plan_skill_fts(plan_skill_fts, rowid, content) VALUES ('delete', old.id, old.content);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS plan_skill_fts_update AFTER UPDATE ON plan_skill BEGIN
+          INSERT INTO plan_skill_fts(plan_skill_fts, rowid, content) VALUES ('delete', old.id, old.content);
+          INSERT INTO plan_skill_fts(rowid, content) VALUES (new.id, new.content);
+        END"
+
+        ;; Error FTS triggers
+        "CREATE TRIGGER IF NOT EXISTS error_fts_insert AFTER INSERT ON error BEGIN
+          INSERT INTO error_fts(rowid, message) VALUES (new.id, new.message);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS error_fts_delete AFTER DELETE ON error BEGIN
+          INSERT INTO error_fts(error_fts, rowid, message) VALUES ('delete', old.id, old.message);
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS error_fts_update AFTER UPDATE ON error BEGIN
+          INSERT INTO error_fts(error_fts, rowid, message) VALUES ('delete', old.id, old.message);
+          INSERT INTO error_fts(rowid, message) VALUES (new.id, new.message);
+        END"
+
+        ;; =====================================================
+        ;; Update Timestamp Triggers
+        ;; =====================================================
+
+        "CREATE TRIGGER IF NOT EXISTS project_updated_at AFTER UPDATE ON project BEGIN
+          UPDATE project SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS plan_skill_updated_at AFTER UPDATE ON plan_skill BEGIN
+          UPDATE plan_skill SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS plan_updated_at AFTER UPDATE ON plan BEGIN
+          UPDATE plan SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS task_updated_at AFTER UPDATE ON task BEGIN
+          UPDATE task SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS file_updated_at AFTER UPDATE ON file BEGIN
+          UPDATE file SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS file_change_updated_at AFTER UPDATE ON file_change BEGIN
+          UPDATE file_change SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS file_change_change_updated_at AFTER UPDATE ON file_change_change BEGIN
+          UPDATE file_change_change SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS file_change_application_updated_at AFTER UPDATE ON file_change_application BEGIN
+          UPDATE file_change_application SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS error_updated_at AFTER UPDATE ON error BEGIN
+          UPDATE error SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+        ]
+
+ :down [
+        ;; Drop triggers first
+        "DROP TRIGGER IF EXISTS project_updated_at"
+        "DROP TRIGGER IF EXISTS plan_skill_updated_at"
+        "DROP TRIGGER IF EXISTS plan_updated_at"
+        "DROP TRIGGER IF EXISTS task_updated_at"
+        "DROP TRIGGER IF EXISTS file_updated_at"
+        "DROP TRIGGER IF EXISTS file_change_updated_at"
+        "DROP TRIGGER IF EXISTS file_change_change_updated_at"
+        "DROP TRIGGER IF EXISTS file_change_application_updated_at"
+        "DROP TRIGGER IF EXISTS error_updated_at"
+
+        "DROP TRIGGER IF EXISTS plan_fts_insert"
+        "DROP TRIGGER IF EXISTS plan_fts_delete"
+        "DROP TRIGGER IF EXISTS plan_fts_update"
+        "DROP TRIGGER IF EXISTS task_fts_insert"
+        "DROP TRIGGER IF EXISTS task_fts_delete"
+        "DROP TRIGGER IF EXISTS task_fts_update"
+        "DROP TRIGGER IF EXISTS plan_skill_fts_insert"
+        "DROP TRIGGER IF EXISTS plan_skill_fts_delete"
+        "DROP TRIGGER IF EXISTS plan_skill_fts_update"
+        "DROP TRIGGER IF EXISTS error_fts_insert"
+        "DROP TRIGGER IF EXISTS error_fts_delete"
+        "DROP TRIGGER IF EXISTS error_fts_update"
+
+        ;; Drop FTS tables
+        "DROP TABLE IF EXISTS plan_fts"
+        "DROP TABLE IF EXISTS task_fts"
+        "DROP TABLE IF EXISTS plan_skill_fts"
+        "DROP TABLE IF EXISTS error_fts"
+
+        ;; Drop regular tables (in reverse dependency order)
+        "DROP TABLE IF EXISTS plan_skills"
+        "DROP TABLE IF EXISTS error"
+        "DROP TABLE IF EXISTS file_change_application"
+        "DROP TABLE IF EXISTS file_change_change"
+        "DROP TABLE IF EXISTS file_change"
+        "DROP TABLE IF EXISTS file"
+        "DROP TABLE IF EXISTS task"
+        "DROP TABLE IF EXISTS plan"
+        "DROP TABLE IF EXISTS plan_skill"
+        "DROP TABLE IF EXISTS project"
+        "DROP TABLE IF EXISTS plan_state"
+        ]}
