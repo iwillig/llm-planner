@@ -9,7 +9,7 @@
 
         "CREATE TABLE IF NOT EXISTS plan_state (
           id TEXT PRIMARY KEY
-        )"
+n        )"
 
         ;; Pre-populate plan states
         "INSERT INTO plan_state (id) VALUES

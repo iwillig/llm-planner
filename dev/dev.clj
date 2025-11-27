@@ -26,7 +26,7 @@
   (db/migration-config
    (db/file-sqlite-database "test.db")))
 
-#_(def project-config
+(def project-config
   (config/load-config))
 
 (comment
