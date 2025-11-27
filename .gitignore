@@ -1,0 +1,8 @@
+/classes/
+/junit.xml
+/llm-planner
+/.nrepl-port
+/.lsp/
+/.cpcache/
+/.clj-kondo/
+/planner_db.db

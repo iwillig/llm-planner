@@ -242,6 +242,90 @@
   [ast-map]
   (:string ast-map))
 
+(defn extract-docstring
+  "Extract docstring from a def/defn form's children.
+   Returns nil if no docstring found.
+   A docstring is a string literal followed by more code (not the final value)."
+  [children]
+  (let [;; Skip: form-type (def/defn), whitespace, name, whitespace
+        ;; Get tokens after the name
+        after-name (->> children
+                        (drop-while #(not= (:string %) (:string (nth children 2 nil))))
+                        (drop 1) ;; Skip the name
+                        (remove #(#{:whitespace :newline} (:tag %))))
+        potential-doc (first after-name)
+        has-more-after (> (count after-name) 1)]
+    ;; Docstring must be a string literal AND there must be code after it
+    (when (and potential-doc
+               has-more-after
+               (= :token (:tag potential-doc))
+               (re-matches #"^\".*\"$" (:string potential-doc)))
+      ;; Remove quotes and unescape
+      (-> (:string potential-doc)
+          (subs 1 (dec (count (:string potential-doc))))
+          (clojure.string/replace #"\\n" "\n")
+          (clojure.string/replace #"\\\"" "\"")))))
+
+(defn extract-namespace-docstring
+  "Extract docstring from ns form's children.
+   Returns nil if no docstring found."
+  [ns-form]
+  (when ns-form
+    (let [children (:children ns-form)
+          potential-doc (->> children
+                             (drop-while #(not= (:string %) (:name ns-form)))
+                             (drop 1) ;; Skip the ns name
+                             (remove #(#{:whitespace :newline} (:tag %)))
+                             first)]
+      (when (and potential-doc
+                 (= :token (:tag potential-doc))
+                 (re-matches #"^\".*\"$" (:string potential-doc)))
+        (-> (:string potential-doc)
+            (subs 1 (dec (count (:string potential-doc))))
+            (clojure.string/replace #"\\n" "\n")
+            (clojure.string/replace #"\\\"" "\""))))))
+
+(defn extract-requires
+  "Extract require forms from ns form.
+   Returns vector of require specs as strings."
+  [ns-form]
+  (when ns-form
+    (let [children (:children ns-form)
+          require-form (->> children
+                            (filter #(= :list (:tag %)))
+                            (filter #(= ":require" (-> % :children first :string)))
+                            first)]
+      (when require-form
+        (->> (:children require-form)
+             (filter #(= :vector (:tag %)))
+             (mapv :string))))))
+
+(defn summarize-namespace
+  "Create a summary of a namespace from its AST.
+   Returns map with:
+   - :namespace - namespace name
+   - :namespace-doc - namespace docstring (or nil)
+   - :requires - vector of require specs
+   - :defs - vector of {name, docstring, type} for def forms
+   - :defns - vector of {name, docstring, type} for defn forms"
+  [ast-map]
+  (let [ns-form (find-namespace-form ast-map)
+        defs (find-defs ast-map)
+        defns (find-defns ast-map)]
+    {:namespace (:name ns-form)
+     :namespace-doc (extract-namespace-docstring ns-form)
+     :requires (extract-requires ns-form)
+     :defs (mapv (fn [d]
+                   {:name (:name d)
+                    :docstring (extract-docstring (:children d))
+                    :type "def"})
+                 defs)
+     :defns (mapv (fn [d]
+                    {:name (:name d)
+                     :docstring (extract-docstring (:children d))
+                     :type "defn"})
+                  defns)}))
+
 (comment
   ;; Example usage:
 
@@ -282,5 +366,4 @@
   (store-file-content! conn 1 "(defn hello [] \"world\")")
 
   ;; Retrieve AST
-  (get-file-content-ast conn 1)
-  )
+  (get-file-content-ast conn 1))
