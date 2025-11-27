@@ -1,3 +1,28 @@
 * LLM Planner
 
 A tool to help you plan and release software with LLM coding agents.
+It is current designed to worked with the Clojure programming
+language, but can be used with any file.
+
+
+** Command line tools
+
+*** TODO planner plan
+**** TODO planner plan start
+**** TODO planner plan stop
+**** TODO planner plan pause
+**** TODO planner plan record
+**** TODO planner plan list
+**** TODO planner plan search <search>
+*** TODO planner task-list
+*** TODO planner task
+*** TODO planner error
+*** TODO planner file-change
+**** TODO planner file-change list
+**** TODO planner file-change create
+**** TODO planner file-change apply
+*** TODO planner file
+*** TODO planner file list
+*** TODO planner file show
+*** TODO planner file summary
+*** TODO planner file search
