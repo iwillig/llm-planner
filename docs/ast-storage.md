@@ -2,7 +2,10 @@
 
 ## Overview
 
-The `llm-planner.ast` namespace provides functionality for parsing Clojure code using rewrite-clj, serializing the AST to JSON, and storing it in SQLite using JSONB format. This enables powerful code analysis, change tracking, and querying capabilities.
+The `llm-planner.ast` namespace provides functionality for parsing
+Clojure code using rewrite-clj, serializing the AST to JSON, and
+storing it in SQLite using JSONB format. This enables powerful code
+analysis, change tracking, and querying capabilities.
 
 ## Key Features
 
@@ -112,8 +115,8 @@ Parse JSON string back to AST map with proper keyword types.
 #### `find-defns`
 ```clojure
 (ast/find-defns ast-map)
-;; => [{:name "hello" 
-;;      :full-form "(defn hello ...)" 
+;; => [{:name "hello"
+;;      :full-form "(defn hello ...)"
 ;;      :children [...]}]
 ```
 
@@ -199,10 +202,10 @@ Compare old and new content, detect defn changes, and store them in `file_change
 
 **Example:**
 ```clojure
-(def changes (ast/store-defn-changes! 
-               conn 
-               file-change-id 
-               "(defn old-fn [])" 
+(def changes (ast/store-defn-changes!
+               conn
+               file-change-id
+               "(defn old-fn [])"
                "(defn new-fn [])"))
 ;; => [{:change-type "removal" :name "old-fn" ...}
 ;;     {:change-type "addition" :name "new-fn" ...}]
@@ -244,7 +247,7 @@ Reconstruct source code from AST. Preserves all formatting, whitespace, and comm
 (db/migrate (db/migration-config conn))
 
 ;; Assuming you have a file record with id=1
-(def source-code 
+(def source-code
   "(ns my.app.core
      (:require [clojure.string :as str]))
 
@@ -271,7 +274,7 @@ Reconstruct source code from AST. Preserves all formatting, whitespace, and comm
 (def old-code
   "(defn greet [name]
      (str \"Hello, \" name))
-   
+
    (defn farewell [name]
      (str \"Goodbye, \" name))")
 
@@ -279,10 +282,10 @@ Reconstruct source code from AST. Preserves all formatting, whitespace, and comm
 (def new-code
   "(defn greet [name]
      (str \"Hi, \" name))  ;; Changed greeting
-   
+
    (defn farewell [name]
      (str \"Goodbye, \" name))
-   
+
    (defn welcome [name]
      (str \"Welcome, \" name))  ;; New function")
 
@@ -300,12 +303,12 @@ Reconstruct source code from AST. Preserves all formatting, whitespace, and comm
 
 ```clojure
 ;; Find all function names that were added
-(jdbc/execute! 
+(jdbc/execute!
   conn
   ["SELECT json_extract(node_ast_json, '$.name') as func_name,
            change_type
     FROM file_change_ast
-    WHERE node_tag = 'defn' 
+    WHERE node_tag = 'defn'
       AND change_type = 'addition'"])
 
 ;; Query AST structure
@@ -323,7 +326,7 @@ Reconstruct source code from AST. Preserves all formatting, whitespace, and comm
 ```clojure
 ;; Find all defns across all file content records
 (defn find-all-project-functions [db project-id]
-  (let [files (jdbc/execute! 
+  (let [files (jdbc/execute!
                 db
                 (sql/format
                   {:select [:fc.id :fc.ast_json :f.path]
