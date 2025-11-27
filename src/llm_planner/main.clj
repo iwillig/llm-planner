@@ -1,12 +1,14 @@
 (ns llm-planner.main
+  (:gen-class)
   (:require
    [next.jdbc :as jdbc]
    [ragtime.next-jdbc :as ragtime-jdbc]
    [ragtime.repl :as ragtime-repl]
    [ragtime.reporter]
    [ragtime.strategy])
-  (:import (org.sqlite SQLiteConnection))
-  (:gen-class))
+  (:import
+   (org.sqlite
+    SQLiteConnection)))
 
 (defn migration-config
   "Given a SQLite Connection

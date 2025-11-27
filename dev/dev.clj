@@ -1,8 +1,8 @@
 (ns dev
   (:require
-   [llm-planner.main :as main]
    [clj-kondo.core :as clj-kondo]
-   [clj-reload.core :as reload]))
+   [clj-reload.core :as reload]
+   [llm-planner.main :as main]))
 
 
 (reload/init
@@ -21,8 +21,9 @@
   []
   (reload/reload))
 
-(def config (main/migration-config
-             (main/file-sqlite-database "test.db")))
+(def config
+  (main/migration-config
+   (main/file-sqlite-database "test.db")))
 
 (comment
   (main/migrate config)

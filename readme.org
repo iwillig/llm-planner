@@ -14,7 +14,6 @@ language, but can be used with any file.
 **** TODO planner plan record
 **** TODO planner plan list
 **** TODO planner plan search <search>
-*** TODO planner task-list
 *** TODO planner task
 *** TODO planner error
 *** TODO planner file-change
@@ -26,3 +25,8 @@ language, but can be used with any file.
 *** TODO planner file show
 *** TODO planner file summary
 *** TODO planner file search
+
+** Data model
+
+- plan
+- task
