@@ -9,7 +9,7 @@
 
         "CREATE TABLE IF NOT EXISTS plan_state (
           id TEXT PRIMARY KEY
-n        )"
+        )"
 
         ;; Pre-populate plan states
         "INSERT INTO plan_state (id) VALUES
@@ -74,6 +74,16 @@ n        )"
           UNIQUE(project_id, path)
         )"
 
+        "CREATE TABLE IF NOT EXISTS file_content (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          file_id INTEGER NOT NULL REFERENCES file(id) ON DELETE CASCADE,
+          content TEXT NOT NULL,
+          ast_json TEXT,
+          parsed_at TEXT NOT NULL DEFAULT (datetime('now')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
         "CREATE TABLE IF NOT EXISTS file_change (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           plan_id INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
@@ -89,6 +99,18 @@ n        )"
           line_start INTEGER NOT NULL,
           line_end INTEGER NOT NULL,
           change_content TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )"
+
+        "CREATE TABLE IF NOT EXISTS file_change_ast (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          file_change_id INTEGER NOT NULL REFERENCES file_change(id) ON DELETE CASCADE,
+          node_path TEXT NOT NULL,
+          node_tag TEXT NOT NULL,
+          node_string TEXT NOT NULL,
+          node_ast_json TEXT,
+          change_type TEXT CHECK(change_type IN ('addition', 'removal', 'update')),
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         )"
@@ -129,9 +151,12 @@ n        )"
         "CREATE INDEX IF NOT EXISTS idx_task_plan_id ON task(plan_id)"
         "CREATE INDEX IF NOT EXISTS idx_task_parent_id ON task(parent_id)"
         "CREATE INDEX IF NOT EXISTS idx_file_project_id ON file(project_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_content_file_id ON file_content(file_id)"
         "CREATE INDEX IF NOT EXISTS idx_file_change_plan_id ON file_change(plan_id)"
         "CREATE INDEX IF NOT EXISTS idx_file_change_file_id ON file_change(file_id)"
         "CREATE INDEX IF NOT EXISTS idx_file_change_change_file_change_id ON file_change_change(file_change_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_ast_file_change_id ON file_change_ast(file_change_id)"
+        "CREATE INDEX IF NOT EXISTS idx_file_change_ast_node_tag ON file_change_ast(node_tag)"
         "CREATE INDEX IF NOT EXISTS idx_file_change_application_file_change_id ON file_change_application(file_change_id)"
         "CREATE INDEX IF NOT EXISTS idx_file_change_application_plan_id ON file_change_application(plan_id)"
         "CREATE INDEX IF NOT EXISTS idx_error_plan_id ON error(plan_id)"
@@ -250,12 +275,20 @@ n        )"
           UPDATE file SET updated_at = datetime('now') WHERE id = NEW.id;
         END"
 
+        "CREATE TRIGGER IF NOT EXISTS file_content_updated_at AFTER UPDATE ON file_content BEGIN
+          UPDATE file_content SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
         "CREATE TRIGGER IF NOT EXISTS file_change_updated_at AFTER UPDATE ON file_change BEGIN
           UPDATE file_change SET updated_at = datetime('now') WHERE id = NEW.id;
         END"
 
         "CREATE TRIGGER IF NOT EXISTS file_change_change_updated_at AFTER UPDATE ON file_change_change BEGIN
           UPDATE file_change_change SET updated_at = datetime('now') WHERE id = NEW.id;
+        END"
+
+        "CREATE TRIGGER IF NOT EXISTS file_change_ast_updated_at AFTER UPDATE ON file_change_ast BEGIN
+          UPDATE file_change_ast SET updated_at = datetime('now') WHERE id = NEW.id;
         END"
 
         "CREATE TRIGGER IF NOT EXISTS file_change_application_updated_at AFTER UPDATE ON file_change_application BEGIN
@@ -268,16 +301,18 @@ n        )"
         ]
 
  :down [
-        ;; Drop triggers first
-        "DROP TRIGGER IF EXISTS project_updated_at"
-        "DROP TRIGGER IF EXISTS plan_skill_updated_at"
-        "DROP TRIGGER IF EXISTS plan_updated_at"
-        "DROP TRIGGER IF EXISTS task_updated_at"
-        "DROP TRIGGER IF EXISTS file_updated_at"
-        "DROP TRIGGER IF EXISTS file_change_updated_at"
-        "DROP TRIGGER IF EXISTS file_change_change_updated_at"
-        "DROP TRIGGER IF EXISTS file_change_application_updated_at"
-        "DROP TRIGGER IF EXISTS error_updated_at"
+         ;; Drop triggers first
+         "DROP TRIGGER IF EXISTS project_updated_at"
+         "DROP TRIGGER IF EXISTS plan_skill_updated_at"
+         "DROP TRIGGER IF EXISTS plan_updated_at"
+         "DROP TRIGGER IF EXISTS task_updated_at"
+         "DROP TRIGGER IF EXISTS file_updated_at"
+         "DROP TRIGGER IF EXISTS file_content_updated_at"
+         "DROP TRIGGER IF EXISTS file_change_updated_at"
+         "DROP TRIGGER IF EXISTS file_change_change_updated_at"
+         "DROP TRIGGER IF EXISTS file_change_ast_updated_at"
+         "DROP TRIGGER IF EXISTS file_change_application_updated_at"
+         "DROP TRIGGER IF EXISTS error_updated_at"
 
         "DROP TRIGGER IF EXISTS plan_fts_insert"
         "DROP TRIGGER IF EXISTS plan_fts_delete"
@@ -298,16 +333,18 @@ n        )"
         "DROP TABLE IF EXISTS plan_skill_fts"
         "DROP TABLE IF EXISTS error_fts"
 
-        ;; Drop regular tables (in reverse dependency order)
-        "DROP TABLE IF EXISTS plan_skills"
-        "DROP TABLE IF EXISTS error"
-        "DROP TABLE IF EXISTS file_change_application"
-        "DROP TABLE IF EXISTS file_change_change"
-        "DROP TABLE IF EXISTS file_change"
-        "DROP TABLE IF EXISTS file"
-        "DROP TABLE IF EXISTS task"
-        "DROP TABLE IF EXISTS plan"
-        "DROP TABLE IF EXISTS plan_skill"
-        "DROP TABLE IF EXISTS project"
-        "DROP TABLE IF EXISTS plan_state"
-        ]}
+         ;; Drop regular tables (in reverse dependency order)
+         "DROP TABLE IF EXISTS plan_skills"
+         "DROP TABLE IF EXISTS error"
+         "DROP TABLE IF EXISTS file_change_application"
+         "DROP TABLE IF EXISTS file_change_ast"
+         "DROP TABLE IF EXISTS file_change_change"
+         "DROP TABLE IF EXISTS file_change"
+         "DROP TABLE IF EXISTS file_content"
+         "DROP TABLE IF EXISTS file"
+         "DROP TABLE IF EXISTS task"
+         "DROP TABLE IF EXISTS plan"
+         "DROP TABLE IF EXISTS plan_skill"
+         "DROP TABLE IF EXISTS project"
+         "DROP TABLE IF EXISTS plan_state"
+         ]}
