@@ -2,6 +2,7 @@
   "Functions for parsing Clojure code with rewrite-clj and storing in SQLite as JSON"
   (:require
    [clojure.data.json :as json]
+   [clojure.string :as str]
    [clojure.walk :as walk]
    [honey.sql :as sql]
    [next.jdbc :as jdbc]
@@ -263,8 +264,8 @@
       ;; Remove quotes and unescape
       (-> (:string potential-doc)
           (subs 1 (dec (count (:string potential-doc))))
-          (clojure.string/replace #"\\n" "\n")
-          (clojure.string/replace #"\\\"" "\"")))))
+          (str/replace #"\\n" "\n")
+          (str/replace #"\\\"" "\"")))))
 
 (defn extract-namespace-docstring
   "Extract docstring from ns form's children.
