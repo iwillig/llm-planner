@@ -1,0 +1,3 @@
+{:id   "001-initial-schema"
+ :up   ["PRAGMA foreign_keys = ON"]
+ :down []}

@@ -12,6 +12,7 @@
   io.github.paintparty/bling {:mvn/version "0.8.8"}
   dev.glossa/metazoa {:mvn/version "0.2.298"}
   mvxcvi/puget {:mvn/version "1.3.4"}
+  rewrite-clj/rewrite-clj {:mvn/version "1.2.50"}
 
   ;; SQL database dependencies
   com.github.seancorfield/next.jdbc {:mvn/version "1.3.955"}
@@ -76,7 +77,4 @@
                       :main-opts ["-m" "uberdeps.uberjar"]}
 
            :outdated
-           {:extra-deps {olical/depot {:mvn/version "1.8.4"}}}
-
-           :migrate
-           {:main-opts ["-m" "clojure-skills.db.migrate"]}}}
+           {:extra-deps {olical/depot {:mvn/version "1.8.4"}}}}}
