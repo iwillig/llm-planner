@@ -1,0 +1,3 @@
+* LLM Planner
+
+A tool to help you plan and release software with LLM coding agents.
