@@ -1,6 +1,7 @@
 (ns llm-planner.config
-  (:require [clj-yaml.core :as yaml]
-            [malli.core :as m]))
+  (:require
+   [clj-yaml.core :as yaml]
+   [malli.core :as m]))
 
 (def default-path ".llm-planner/config.yml")
 

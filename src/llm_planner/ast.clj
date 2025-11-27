@@ -3,10 +3,10 @@
   (:require
    [clojure.data.json :as json]
    [clojure.walk :as walk]
-   [next.jdbc :as jdbc]
    [honey.sql :as sql]
-   [rewrite-clj.parser :as p]
-   [rewrite-clj.node :as n]))
+   [next.jdbc :as jdbc]
+   [rewrite-clj.node :as n]
+   [rewrite-clj.parser :as p]))
 
 ;; ============================================================================
 ;; AST Serialization/Deserialization

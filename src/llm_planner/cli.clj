@@ -1,11 +1,12 @@
 (ns llm-planner.cli
-  (:require [cli-matic.core :as cli-matic]
-            [clojure.pprint :as pp]
-            [clojure.data.json :as json]
-            [clojure.java.io :as io]
-            [llm-planner.db :as db]
-            [llm-planner.config :as config]
-            [llm-planner.ast :as ast]))
+  (:require
+   [cli-matic.core :as cli-matic]
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
+   [clojure.pprint :as pp]
+   [llm-planner.ast :as ast]
+   [llm-planner.config :as config]
+   [llm-planner.db :as db]))
 
 
 (defn migrate-db [])
@@ -150,7 +151,7 @@
              :type :with-flag
              :default false}]
      :runs parse-file-ast}
-    
+
     {:command "summary"
      :description "Summarize Clojure file as JSON: namespace, requires, defs/defns with docstrings. Fast API overview without reading source."
      :opts [{:option "file"
@@ -159,8 +160,6 @@
              :type :string
              :required true}]
      :runs summarize-file}]})
-
-
 
 
 (def ^:private COMMAND-CONFIG

@@ -15,7 +15,7 @@
   [^SQLiteConnection connection]
   {:datastore  (ragtime-jdbc/sql-database connection)
    :migrations (ragtime-jdbc/load-resources "migrations")
-   ;;:reporter   ragtime.reporter/silent
+   ;; :reporter   ragtime.reporter/silent
    :strategy   ragtime.strategy/apply-new})
 
 (defn memory-sqlite-database
