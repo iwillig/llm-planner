@@ -1,0 +1,45 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "tokyonight",
+  "model": "anthropic/claude-sonnet-4-5",
+  "autoupdate": true,
+  "tools": {
+    "todowrite": false,
+    "todoread": false
+  },
+  "agent": {
+
+    "clojure_builder": {
+      "model": "anthropic/claude-sonnet-4-5",
+      "prompt": "{file:./clojure_build.md}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "read": true,
+        "bash": true,
+        "todowrite": false,
+        "todoread": false
+      },
+      "permission": {
+        "write": "allow",
+        "edit": "allow"
+      }
+    }
+  },
+  "mcp": {},
+  "lsp": {
+    "clojure-lsp": {
+      "command": ["/usr/local/bin/clojure-lsp"],
+      "extensions": [".clj", ".cljs", ".cljc", ".edn", ".bb"],
+      "env": {
+        "CLOJURE_LSP_LOG_LEVEL": "info"
+      },
+      "initialization": {
+        "initializationOptions": {
+          "project-root-uri-as-project-root?": true,
+          "text-document-sync-kind": 2
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 (ns llm-planner.test-helper
-  (:require [llm-planner.main :as main])
+  (:require [llm-planner.db :as db])
   (:import (org.sqlite SQLiteConnection)
            (org.sqlite.core DB)))
 
@@ -10,15 +10,15 @@
   "A clojure.test fixture that sets up a in memory database
    After the test is run, this will rollback all of the migrations"
   [test-func]
-  (let [conn     (main/memory-sqlite-database)
+  (let [conn     (db/memory-sqlite-database)
         database (.getDatabase ^SQLiteConnection conn)
         _        (.enable_load_extension ^DB database true)
-        migration-config (main/migration-config conn)]
+        migration-config (db/migration-config conn)]
     (try
       (binding [*connection* conn
                 *db*         database]
-        (main/migrate migration-config)
+        (db/migrate migration-config)
         (test-func))
       (finally
-        (main/rollback-all migration-config)
+        (db/rollback-all migration-config)
         (.close conn)))))

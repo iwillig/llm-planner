@@ -1,11 +1,11 @@
 (ns llm-planner.models)
 
 
-(def PlanInput
+(def _PlanInput
   [:map
    [:name          :string]
    [:context       :string]
    [:plan_state_id :string]])
 
-(defn create-plan
-  [connection input])
+(defn _create-plan
+  [_connection _input])
