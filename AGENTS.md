@@ -725,6 +725,7 @@ clojure-skills plan result set 1 \
    - Pure functions where possible
    - Data transformation over mutation
    - Clear naming conventions
+   - **NEVER use `!` suffix in function names** (this project doesn't follow that convention)
    - **ALWAYS put `require` in the `ns` form, NEVER inside functions**
 
 6. **Leverage existing libraries**

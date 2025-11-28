@@ -7,7 +7,7 @@
    Core API:
    - parse-string: Parse Clojure code to AST
    - find-defns, find-defs, find-namespace: Find forms in AST
-   - store-file-content!, get-file-content-ast: Database operations
+   - store-file-content, get-file-content-ast: Database operations
    
    AST Format:
    - Vectors with tag-first structure: [tag ...content]
@@ -239,12 +239,12 @@
 ;; Database Operations
 ;; ============================================================================
 
-(defn store-file-content!
+(defn store-file-content
   "Store file content with AST in database.
    Returns the inserted row's ID, or nil if parsing fails.
    
    Example:
-     (store-file-content! db 1 \"(defn hello [] \\\"world\\\")\")"
+     (store-file-content db 1 \"(defn hello [] \\\"world\\\")\")"
   [db file-id content]
   (let [ast (parse-string content)]
     (if (parse-error? ast)
@@ -272,7 +272,7 @@
                     :where [:= :id content-id]}))]
     (json->ast (:file_content/compact_ast row))))
 
-(defn store-form-change!
+(defn store-form-change
   "Store a specific form change in file_change_ast table.
    
    Args:
@@ -292,13 +292,13 @@
                :change_type (:change-type form-data)}]
      :returning [:id]})))
 
-(defn store-defn-changes!
+(defn store-defn-changes
   "Store all defn changes between old and new content.
    Returns sequence of changes stored."
   [db file-change-id old-content new-content]
   (let [changes (compare-defns old-content new-content)]
     (doseq [change changes]
-      (store-form-change! db file-change-id change))
+      (store-form-change db file-change-id change))
     changes))
 
 (defn query-forms-by-type
@@ -350,5 +350,5 @@
   (db/migrate (db/migration-config conn))
 
   ;; Store and retrieve
-  (def content-id (store-file-content! conn 1 "(defn hello [] \"world\")"))
+  (def content-id (store-file-content conn 1 "(defn hello [] \"world\")"))
   (get-file-content-ast conn content-id))

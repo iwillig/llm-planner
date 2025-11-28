@@ -6,7 +6,8 @@
    [clojure.pprint :as pp]
    [llm-planner.ast :as ast]
    [llm-planner.config :as config]
-   [llm-planner.db :as db]))
+   [llm-planner.db :as db]
+   [llm-planner.indexer :as indexer]))
 
 
 (defn migrate-db [])
@@ -168,6 +169,24 @@
              :required true}]
      :runs summarize-file}]})
 
+(defn run-index
+  "Index all Clojure files in the project.
+   
+   Discovers files based on source_paths and file_patterns in config,
+   parses each file, and stores AST in database."
+  [opts]
+  (let [config (config/load-config opts)
+        conn (db/file-sqlite-database config)]
+    (try
+      (indexer/build-index conn config)
+      (finally
+        (.close conn)))))
+
+(def ^:private INDEX-CONFIG
+  {:command "index"
+   :description "Index all Clojure files in the project. Parses files and stores AST in database for later analysis."
+   :runs run-index})
+
 
 (def ^:private COMMAND-CONFIG
   {:command "llm-planner"
@@ -177,7 +196,7 @@
                   :option  "config-path"
                   :type    :string}]
    :description "A tool for working with LLM tools"
-   :subcommands [DB-CONFIG CONFIG-CONFIG AST-CONFIG]})
+   :subcommands [DB-CONFIG CONFIG-CONFIG AST-CONFIG INDEX-CONFIG]})
 
 (defn main-fn
   [args]

@@ -122,7 +122,7 @@
                             {:insert-into :file
                              :values [{:project_id 1 :path "test.clj" :summary "Test"}]}))
           ;; Store content with AST
-          content-id (ast/store-file-content! conn 1 code)
+          content-id (ast/store-file-content conn 1 code)
           ;; Retrieve AST
           retrieved-ast (ast/get-file-content-ast conn content-id)]
       (is (some? content-id))
@@ -158,7 +158,7 @@
                             {:insert-into :file_change
                              :values [{:plan_id 1 :file_id 1}]}))
           ;; Store changes
-          changes (ast/store-defn-changes! conn 1 old-code new-code)
+          changes (ast/store-defn-changes conn 1 old-code new-code)
           ;; Query stored changes
           stored (jdbc/execute! conn
                                 (sql/format
@@ -198,9 +198,9 @@
                             {:insert-into :file_change
                              :values [{:plan_id 1 :file_id 1}]}))
           ;; Store changes (foo removed, bar added = 2 changes)
-          _ (ast/store-defn-changes! conn 1
-                                     "(defn foo [] 1)"
-                                     "(defn bar [] 2)")
+          _ (ast/store-defn-changes conn 1
+                                    "(defn foo [] 1)"
+                                    "(defn bar [] 2)")
           ;; Query
           results (ast/query-forms-by-type conn "defn")]
       (is (= 2 (count results)))

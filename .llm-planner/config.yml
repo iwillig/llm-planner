@@ -1,1 +1,12 @@
 db_path: planner_db.db
+
+project:
+  name: "LLM Planner"
+  type: "clojure"
+  source_paths:
+    - "src"
+    - "test"
+  file_patterns:
+    - "**/*.clj"
+    - "**/*.cljs"
+    - "**/*.cljc"
