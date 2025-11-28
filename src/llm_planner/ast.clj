@@ -95,11 +95,11 @@
          ;; Restore symbols
          (and (map? x) (= (:__type x) "symbol"))
          (symbol (:__value x))
-         
+
          ;; Restore keywords  
          (and (map? x) (= (:__type x) "keyword"))
          (keyword (:__value x))
-         
+
          :else x))
      parsed)))
 

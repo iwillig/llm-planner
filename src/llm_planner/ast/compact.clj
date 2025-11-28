@@ -115,47 +115,47 @@
          ;; Token nodes - store value directly
          :token
          [:tok (n/sexpr node)]
-         
+
          ;; Whitespace - optional
          :whitespace
          (when preserve-whitespace?
            [:ws (n/string node)])
-         
+
          ;; Comments - optional
          :comment
          (when preserve-comments?
            [:comment (n/string node)])
-         
+
          ;; Newlines - optional
          :newline
          (when preserve-whitespace?
            [:ws "\n"])
-         
+
          ;; Collection nodes - recursively convert children
          :list
          (into [:list]
                (keep #(compact-node % {:preserve-whitespace? preserve-whitespace?
                                        :preserve-comments? preserve-comments?}))
                (n/children node))
-         
+
          :vector
          (into [:vec]
                (keep #(compact-node % {:preserve-whitespace? preserve-whitespace?
                                        :preserve-comments? preserve-comments?}))
                (n/children node))
-         
+
          :map
          (into [:map]
                (keep #(compact-node % {:preserve-whitespace? preserve-whitespace?
                                        :preserve-comments? preserve-comments?}))
                (n/children node))
-         
+
          :set
          (into [:set]
                (keep #(compact-node % {:preserve-whitespace? preserve-whitespace?
                                        :preserve-comments? preserve-comments?}))
                (n/children node))
-         
+
          ;; Metadata
          :meta
          (let [[meta-node value-node] (n/children node)]
@@ -164,7 +164,7 @@
                                      :preserve-comments? preserve-comments?})
             (compact-node value-node {:preserve-whitespace? preserve-whitespace?
                                       :preserve-comments? preserve-comments?})])
-         
+
          ;; Reader macros
          :reader-macro
          (let [[tag-node value-node] (n/children node)]
@@ -172,67 +172,67 @@
             (n/string tag-node)
             (compact-node value-node {:preserve-whitespace? preserve-whitespace?
                                       :preserve-comments? preserve-comments?})])
-         
+
          ;; Deref (@)
          :deref
          [:reader-macro "@"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Quote (')
          :quote
          [:reader-macro "'"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Syntax quote (`)
          :syntax-quote
          [:reader-macro "`"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Unquote (~)
          :unquote
          [:reader-macro "~"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Unquote-splicing (~@)
          :unquote-splicing
          [:reader-macro "~@"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Var quote (#')
          :var
          [:reader-macro "#'"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Anonymous function (#())
          :fn
          [:reader-macro "#"
           (compact-node (first (n/children node))
                         {:preserve-whitespace? preserve-whitespace?
                          :preserve-comments? preserve-comments?})]
-         
+
          ;; Regex (#"...")
          :regex
          [:tok (n/sexpr node)]
-         
+
          ;; Forms node (top-level)
          :forms
          (into [:forms]
                (keep #(compact-node % {:preserve-whitespace? preserve-whitespace?
                                        :preserve-comments? preserve-comments?}))
                (n/children node))
-         
+
          ;; Default: return tag and string representation
          [:unknown tag (n/string node)])))))
 
