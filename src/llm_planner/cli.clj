@@ -70,8 +70,15 @@
     (let [file-path (io/file file)
           absolute-path (.getAbsolutePath file-path)]
       (if (.exists file-path)
-        (let [parsed-ast (ast/parse-clojure-file absolute-path)
-              summary (ast/summarize-namespace parsed-ast)]
+        (let [code (slurp absolute-path)
+              ns-form (ast/find-namespace code)
+              defns (ast/find-defns code)
+              defs (ast/find-defs code)
+              summary {:namespace (:name ns-form)
+                       :namespace-doc (:docstring ns-form)
+                       :requires (:requires ns-form)
+                       :defns (mapv #(select-keys % [:name :docstring]) defns)
+                       :defs (mapv #(select-keys % [:name :docstring]) defs)}]
           (println (json/write-str summary :indent true)))
         (do
           (println "Error: File not found:" absolute-path)
@@ -119,7 +126,7 @@
     (let [file-path (io/file file)
           absolute-path (.getAbsolutePath file-path)]
       (if (.exists file-path)
-        (let [parsed-ast (ast/parse-clojure-file absolute-path)
+        (let [parsed-ast (ast/parse-file absolute-path)
               json-str (ast/ast->json parsed-ast)
               parsed-json (json/read-str json-str)]
           (if compact

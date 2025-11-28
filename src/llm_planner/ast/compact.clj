@@ -78,6 +78,7 @@
    ;;          [:list [:tok '+] [:tok 'x] [:tok 'y]]]
    ```"
   (:require
+   [clojure.string]
    [rewrite-clj.node :as n]
    [rewrite-clj.parser :as p]))
 
@@ -392,6 +393,30 @@
           node)
     @results))
 
+(defn defn-form?
+  "Check if compact AST node represents a defn form."
+  [node]
+  (and (list-node? node)
+       (let [[first-child] (content node)]
+         (and (token? first-child)
+              (= 'defn (token-value first-child))))))
+
+(defn def-form?
+  "Check if compact AST node represents a def form."
+  [node]
+  (and (list-node? node)
+       (let [[first-child] (content node)]
+         (and (token? first-child)
+              (= 'def (token-value first-child))))))
+
+(defn ns-form?
+  "Check if compact AST node represents an ns form."
+  [node]
+  (and (list-node? node)
+       (let [[first-child] (content node)]
+         (and (token? first-child)
+              (= 'ns (token-value first-child))))))
+
 (defn find-defns
   "Find all defn forms in compact AST.
    Returns vector of defn nodes."
@@ -515,30 +540,6 @@
                         (content vec-node)))
                 vecs))))))
 
-(defn defn-form?
-  "Check if compact AST node represents a defn form."
-  [node]
-  (and (list-node? node)
-       (let [[first-child] (content node)]
-         (and (token? first-child)
-              (= 'defn (token-value first-child))))))
-
-(defn def-form?
-  "Check if compact AST node represents a def form."
-  [node]
-  (and (list-node? node)
-       (let [[first-child] (content node)]
-         (and (token? first-child)
-              (= 'def (token-value first-child))))))
-
-(defn ns-form?
-  "Check if compact AST node represents an ns form."
-  [node]
-  (and (list-node? node)
-       (let [[first-child] (content node)]
-         (and (token? first-child)
-              (= 'ns (token-value first-child))))))
-
 ;; ============================================================================
 ;; Size Analysis
 ;; ============================================================================
@@ -546,7 +547,7 @@
 (defn node-count
   "Count total number of nodes in compact AST."
   [node]
-  (if (collection? node)
+  (if (collection-node? node)
     (reduce + 1 (map node-count (content node)))
     1))
 
@@ -623,17 +624,17 @@
   (find-defns ast)
   ;;=> [[:list [:tok 'defn] [:tok 'foo] ...]
   ;;    [:list [:tok 'defn] [:tok 'bar] ...]]
-  
+
   ;; Or using filter
   (filter defn-form? (find-all collection-node? ast))
   ;;=> [[:list [:tok 'defn] [:tok 'foo] ...]
   ;;    [:list [:tok 'defn] [:tok 'bar] ...]]
 
   ;; Size comparison
-  (require '[llm-planner.ast :as ast])
-  (def verbose (ast/parse-clojure-string "(defn add [x y] (+ x y))"))
+  ;; (require '[rewrite-clj.parser :as p])  ; Already required at top
+  (def verbose-node (p/parse-string-all "(defn add [x y] (+ x y))"))
   (def compact (compact-ast "(defn add [x y] (+ x y))"))
-  (compare-sizes verbose compact)
+  (compare-sizes verbose-node compact)
   ;;=> {:verbose-size 600
   ;;    :compact-size 113
   ;;    :reduction-percent 81.2

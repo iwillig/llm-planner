@@ -1,6 +1,5 @@
 (ns llm-planner.ast.compact-test
   (:require [clojure.test :refer [deftest is testing]]
-            [llm-planner.ast :as ast]
             [llm-planner.ast.compact :as compact]))
 
 (deftest test-compact-ast-basic
@@ -108,14 +107,14 @@
       (is (compact/ns-form? (second ast))))))
 
 (deftest test-size-comparison
-  (testing "Compare verbose vs compact"
+  (testing "Compact AST is reasonably sized"
     (let [code "(defn add [x y] (+ x y))"
-          verbose-ast (ast/parse-clojure-string code)
           compact-ast (compact/compact-ast code)
-          comparison (compact/compare-sizes verbose-ast compact-ast)]
-      (is (> (:verbose-size comparison) (:compact-size comparison)))
-      (is (> (:reduction-percent comparison) 50))
-      (is (> (:compression-ratio comparison) 2)))))
+          size (compact/serialized-size compact-ast)]
+      ;; Compact AST should be under 150 chars for this simple defn
+      (is (< size 150))
+      ;; Should be able to count nodes (11 = :forms + :list + 5 :tok + :vec + 2 :tok + :list + 3 :tok)
+      (is (= 11 (compact/node-count compact-ast))))))
 
 (deftest test-walk
   (testing "Walk replaces tokens"
@@ -131,8 +130,8 @@
 
   (testing "Walk visits all nodes"
     (let [ast [:list [:tok 'defn] [:tok 'foo]
-                     [:vec [:tok 'x]]
-                     [:list [:tok '+] [:tok 'x] [:tok 1]]]
+               [:vec [:tok 'x]]
+               [:list [:tok '+] [:tok 'x] [:tok 1]]]
           visited (atom [])
           _ (compact/walk
              (fn [node]

@@ -19,7 +19,6 @@
                        [:list [:tok '+] [:tok 'x] [:tok 'y]]]]"
   (:require
    [clojure.data.json :as json]
-   [clojure.string :as str]
    [clojure.walk :as walk]
    [honey.sql :as sql]
    [llm-planner.ast.compact :as compact]
