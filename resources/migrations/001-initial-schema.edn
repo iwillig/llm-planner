@@ -78,7 +78,7 @@
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           file_id INTEGER NOT NULL REFERENCES file(id) ON DELETE CASCADE,
           content TEXT NOT NULL,
-          ast_json TEXT,
+          compact_ast TEXT,
           parsed_at TEXT NOT NULL DEFAULT (datetime('now')),
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -109,7 +109,7 @@
           node_path TEXT NOT NULL,
           node_tag TEXT NOT NULL,
           node_string TEXT NOT NULL,
-          node_ast_json TEXT,
+          node_compact_ast TEXT,
           change_type TEXT CHECK(change_type IN ('addition', 'removal', 'update')),
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
